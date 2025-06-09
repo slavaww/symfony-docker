@@ -2,16 +2,38 @@ FROM php:8.4-fpm
 
 # Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
-    git \
     unzip \
     libzip-dev \
     libpq-dev \
-    && docker-php-ext-install zip pdo_mysql \
+    libicu-dev \
+    libxml2-dev \
+    libssl-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        zip \
+        pdo_mysql \
+        mysqli \
+        intl \
+        xml \
+        opcache \
+        gd \
+        mbstring \
+        bcmath \
+        sockets \
     && pecl install xdebug \
-    && docker-php-ext-enable xdebug
+    && docker-php-ext-enable xdebug \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Устанавливаем Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Настройки PHP
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Рабочая директория
 WORKDIR /var/www
